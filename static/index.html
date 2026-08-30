@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lead Cloud AI</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a12;--surface:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);--accent:#6366f1;--accent2:#818cf8;--adim:rgba(99,102,241,0.12);--text:#e2e8f0;--muted:#64748b;--green:#22c55e;--gdim:rgba(34,197,94,0.12);--red:#ef4444;--rdim:rgba(239,68,68,0.12);--card:rgba(15,18,30,0.85);--glow:0 0 20px rgba(99,102,241,0.15)}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
+
+.screen{display:none;flex-direction:column;height:100%;width:100%}
+.screen.active{display:flex}
+
+/* Login */
+#login-screen{align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#111827 0%,#0a0a12 70%)}
+.login-box{text-align:center;padding:40px;max-width:380px;width:90%}
+.login-logo{font-size:42px;margin-bottom:8px}
+.login-title{font-size:22px;font-weight:700;letter-spacing:4px;margin-bottom:6px}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:32px}
+.login-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.login-btn:hover{background:var(--adim);border-color:var(--accent);box-shadow:var(--glow)}
+.login-btn svg{width:20px;height:20px}
+.demo-link{display:block;margin-top:16px;font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline}
+
+/* Chat */
+#chat-screen{flex-direction:column}
+.chat-header{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(10,10,18,0.95);backdrop-filter:blur(12px)}
+.chat-logo{font-size:13px;font-weight:700;letter-spacing:3px}
+.chat-logo em{color:var(--accent);font-style:normal}
+.pill{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:var(--gdim);border:1px solid rgba(34,197,94,0.2);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green)}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.spacer{flex:1}
+.user-name{font-size:11px;color:var(--muted)}
+.logout-btn{font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* Messages */
+.chat-feed{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.chat-feed::-webkit-scrollbar{width:3px}
+.chat-feed::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.55;animation:pop .18s ease;white-space:pre-wrap}
+@keyframes pop{from{opacity:0;transform:translateY(4px)}}
+.msg-agent{align-self:flex-start;background:var(--adim);border:1px solid rgba(99,102,241,0.15);border-bottom-left-radius:4px}
+.msg-user{align-self:flex-end;background:var(--surface);border:1px solid var(--border);border-bottom-right-radius:4px}
+.msg-sys{align-self:center;font-size:11px;color:var(--muted);background:transparent;border:none;padding:2px 8px}
+.msg .label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.5;margin-bottom:4px}
+.msg-agent .label{color:var(--accent)}
+.msg-user .label{color:var(--muted);text-align:right}
+
+/* Job Card */
+.job-card{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;max-width:85%;animation:pop .18s ease}
+.job-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px}
+.job-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+.job-bar-wrap{height:4px;background:var(--border);border-radius:2px;margin:6px 0;overflow:hidden}
+.job-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .5s ease}
+.job-status{font-size:11px;font-weight:600;margin-top:6px}
+.job-status.running{color:var(--accent2)}
+.job-status.complete{color:var(--green)}
+.job-status.failed{color:var(--red)}
+.download-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 14px;border-radius:8px;border:1px solid rgba(34,197,94,0.3);background:var(--gdim);color:var(--green);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s}
+.download-btn:hover{background:rgba(34,197,94,0.2);box-shadow:0 0 12px rgba(34,197,94,0.2)}
+
+/* Input */
+.chat-input-wrap{flex-shrink:0;padding:10px 16px;border-top:1px solid var(--border);background:rgba(10,10,18,0.95);backdrop-filter:blur(12px)}
+.chat-input-row{display:flex;gap:8px;align-items:flex-end}
+.chat-input{flex:1;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-family:inherit;resize:none;max-height:100px;outline:none;transition:border-color .2s}
+.chat-input:focus{border-color:var(--accent)}
+.chat-input::placeholder{color:var(--muted)}
+.send-btn{width:40px;height:40px;border-radius:12px;border:none;background:var(--accent);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.send-btn:hover{background:var(--accent2);box-shadow:var(--glow)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Suggestions */
+.suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px}
+.suggestion{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer;transition:all .2s}
+.suggestion:hover{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="screen active">
+<div class="login-box">
+<div class="login-logo">&#9889;</div>
+<div class="login-title">LEAD CLOUD AI</div>
+<div class="login-sub">AI-powered lead generation agents</div>
+<button class="login-btn" onclick="googleLogin()">
+<svg viewBox="0 0 24 24"><path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+Login with Google
+</button>
+<div class="demo-link" onclick="demoLogin()">Try Demo (No Google needed)</div>
+</div>
+</div>
+
+<!-- CHAT SCREEN -->
+<div id="chat-screen" class="screen">
+<div class="chat-header">
+<div class="chat-logo"><em>LEAD</em> CLOUD</div>
+<div class="pill"><span class="dot"></span>Online</div>
+<div class="spacer"></div>
+<span class="user-name" id="user-name"></span>
+<button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<div class="chat-feed" id="chat-feed">
+<div class="msg msg-sys">Connected to Lead Cloud AI</div>
+</div>
+
+<div class="suggestions" id="suggestions">
+<div class="suggestion" onclick="sendSuggestion(this)">100 HVAC leads Houston se</div>
+<div class="suggestion" onclick="sendSuggestion(this)">50 Medical leads Miami</div>
+<div class="suggestion" onclick="sendSuggestion(this)">3 clients — HVAC 200, Roofing 100, Plumbing 50</div>
+<div class="suggestion" onclick="sendSuggestion(this)">200 Pest Control leads Chicago</div>
+</div>
+
+<div class="chat-input-wrap">
+<div class="chat-input-row">
+<textarea class="chat-input" id="chat-input" placeholder="Tell me what leads you need..." rows="1" onkeydown="handleKey(event)"></textarea>
+<button class="send-btn" id="send-btn" onclick="sendMessage()">&#10148;</button>
+</div>
+</div>
+</div>
+
+<script>
+let token = localStorage.getItem('lc_token') || '';
+let userName = localStorage.getItem('lc_name') || '';
+let ws = null;
+let jobCards = {};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function googleLogin() {
+  window.location.href = '/auth/google';
+}
+
+async function demoLogin() {
+  const resp = await fetch('/auth/demo-login', { method: 'POST' });
+  const data = await resp.json();
+  if (data.ok) {
+    token = data.token;
+    userName = data.name;
+    localStorage.setItem('lc_token', token);
+    localStorage.setItem('lc_name', userName);
+    initChat();
+  }
+}
+
+function logout() {
+  token = '';
+  userName = '';
+  localStorage.removeItem('lc_token');
+  localStorage.removeItem('lc_name');
+  showScreen('login-screen');
+}
+
+function initChat() {
+  showScreen('chat-screen');
+  document.getElementById('user-name').textContent = userName;
+  connectWS();
+  addAgentMessage("Hello! I'm Lead Cloud AI. Tell me what leads you need.\n\nExamples:\n- 100 HVAC leads Houston se\n- Medical leads Miami, 50\n- 3 clients ke liye — HVAC 200, Roofing 100, Plumbing 50\n- 500 Pest Control leads nationwide");
+}
+
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws?token=${token}`);
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    handleWSMessage(msg);
+  };
+  ws.onclose = () => setTimeout(connectWS, 3000);
+  ws.onerror = () => {};
+}
+
+function handleWSMessage(msg) {
+  if (msg.type === 'job_progress') {
+    updateJobCard(msg.job_id, msg.phase, msg.progress, msg.total);
+  } else if (msg.type === 'job_complete') {
+    completeJobCard(msg.job_id, msg.leads_found, msg.file);
+  } else if (msg.type === 'job_error') {
+    errorJobCard(msg.job_id, msg.error);
+  }
+}
+
+function updateJobCard(jobId, phase, progress, total) {
+  let card = document.getElementById('job-' + jobId);
+  if (!card) {
+    card = createJobCard(jobId);
+  }
+  const pct = total > 0 ? Math.round((progress / total) * 100) : 0;
+  const bar = card.querySelector('.job-bar');
+  const status = card.querySelector('.job-status');
+  const detail = card.querySelector('.job-detail');
+  bar.style.width = pct + '%';
+  status.className = 'job-status running';
+  status.textContent = 'Running...';
+  detail.textContent = `${phase.replace(/_/g, ' ')} — ${progress}/${total} (${pct}%)`;
+}
+
+function completeJobCard(jobId, leadsFound, file) {
+  const card = document.getElementById('job-' + jobId);
+  if (!card) return;
+  const bar = card.querySelector('.job-bar');
+  const status = card.querySelector('.job-status');
+  const detail = card.querySelector('.job-detail');
+  bar.style.width = '100%';
+  status.className = 'job-status complete';
+  status.textContent = `Complete — ${leadsFound} leads`;
+  detail.textContent = '';
+
+  const dlWrap = card.querySelector('.dl-wrap');
+  if (file) {
+    const btn = document.createElement('button');
+    btn.className = 'download-btn';
+    btn.innerHTML = '&#11015; Download Excel';
+    btn.onclick = () => {
+      window.open(`/api/download/${jobId}?token=${token}`, '_blank');
+    };
+    dlWrap.appendChild(btn);
+  }
+
+  addAgentMessage(`${leadsFound} leads ready! Download Excel from the card above.`);
+}
+
+function errorJobCard(jobId, error) {
+  const card = document.getElementById('job-' + jobId);
+  if (!card) return;
+  const status = card.querySelector('.job-status');
+  const detail = card.querySelector('.job-detail');
+  status.className = 'job-status failed';
+  status.textContent = 'Failed';
+  detail.textContent = error;
+}
+
+function createJobCard(jobId) {
+  const feed = document.getElementById('chat-feed');
+  const card = document.createElement('div');
+  card.className = 'job-card';
+  card.id = 'job-' + jobId;
+  card.innerHTML = `
+    <div class="job-title">Job #${jobId}</div>
+    <div class="job-row"><span>Status</span><span class="job-detail">Starting...</span></div>
+    <div class="job-bar-wrap"><div class="job-bar" style="width:0%"></div></div>
+    <div class="job-status running">Starting...</div>
+    <div class="dl-wrap"></div>
+  `;
+  feed.appendChild(card);
+  feed.scrollTop = feed.scrollHeight;
+  return card;
+}
+
+function addAgentMessage(text) {
+  const feed = document.getElementById('chat-feed');
+  const div = document.createElement('div');
+  div.className = 'msg msg-agent';
+  div.innerHTML = `<div class="label">Lead Cloud AI</div>${escapeHtml(text)}`;
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function addUserMessage(text) {
+  const feed = document.getElementById('chat-feed');
+  const div = document.createElement('div');
+  div.className = 'msg msg-user';
+  div.innerHTML = `<div class="label">You</div>${escapeHtml(text)}`;
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function sendSuggestion(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  addUserMessage(text);
+
+  document.getElementById('suggestions').style.display = 'none';
+
+  const sendBtn = document.getElementById('send-btn');
+  sendBtn.disabled = true;
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+    });
+    const data = await resp.json();
+    if (data.response) {
+      addAgentMessage(data.response);
+    }
+    if (data.jobs && data.jobs.length > 0) {
+      for (const jid of data.jobs) {
+        createJobCard(jid);
+      }
+    }
+  } catch (e) {
+    addAgentMessage("Connection error. Please try again.");
+  }
+
+  sendBtn.disabled = false;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+  const el = e.target;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+// Check URL params for OAuth callback
+const params = new URLSearchParams(window.location.search);
+if (params.get('token')) {
+  token = params.get('token');
+  userName = params.get('name') || 'User';
+  localStorage.setItem('lc_token', token);
+  localStorage.setItem('lc_name', userName);
+  window.history.replaceState({}, '', '/');
+}
+
+if (token) {
+  initChat();
+} else {
+  showScreen('login-screen');
+}
+</script>
+</body>
+</html>
